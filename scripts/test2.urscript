@@ -1,0 +1,4 @@
+def myProg():
+    global my_var=2
+    sync()
+end

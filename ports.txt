@@ -1,0 +1,26 @@
+Port Number 	Interface
+80 	Reserved by UR
+502 	Modbus TCP
+2222 	Ethernet/IP
+7827 	Internally used
+7828 	Internally used
+8080 	Not recommended since many old URCaps default to this port
+29919 	Internally used
+29998 	Internally used
+29999 	Dashboard server
+30001 	Primary
+30002 	Secondary
+30003 	Real-time
+30004 	RTDE
+30011 	Primary read only
+30012 	Secondary read only
+30013 	Real-time read only
+34964 	Profinet
+40000 	Ethernet/IP
+40002 	Profinet
+44818 	Ethernet/IP
+49152 	Profinet
+50003 	Internally used (e-Series only)
+50004 	Internally used (e-Series only)
+50005 	Internally used (e-Series only)
+50006 	Internally used (e-Series only)

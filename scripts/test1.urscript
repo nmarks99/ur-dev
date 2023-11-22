@@ -1,0 +1,8 @@
+def myProg():
+    global a=1
+    global a=2
+    global b=3
+    global b=4
+    global c=5
+    global c=6
+end
