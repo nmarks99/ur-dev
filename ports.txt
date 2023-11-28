@@ -1,10 +1,11 @@
-Port Number 	Interface
-80 	Reserved by UR
-502 	Modbus TCP
-2222 	Ethernet/IP
-7827 	Internally used
-7828 	Internally used
-8080 	Not recommended since many old URCaps default to this port
+Port  | Interface
+------------------
+80 	    Reserved by UR
+502 	  Modbus TCP
+2222 	  Ethernet/IP
+7827 	  Internally used
+7828 	  Internally used
+8080 	  Not recommended since many old URCaps default to this port
 29919 	Internally used
 29998 	Internally used
 29999 	Dashboard server

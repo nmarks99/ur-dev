@@ -5,7 +5,7 @@
 
 from urx.urscript import URScript
 from urx import Robot
-from ursock import URScriptHelper
+from ur_easy_script import URScriptHelper
 
 # Connect to robot
 robot_host = "164.54.104.148"

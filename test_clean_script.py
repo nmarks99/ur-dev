@@ -1,4 +1,4 @@
-from ursock import _clean_script, URScriptHelper
+from ur_easy_script import _clean_script, URScriptHelper
 from urx.urscript import URScript
 
 s = URScript()

@@ -107,7 +107,7 @@ class URScriptHelper():
         self.urscript.add_line_to_program(msg)
         self.urscript._socket_send_string(f"variables : to_str('{variable}')", self.socket_name)
         print(f"Sending the following script to the robot\n{self.urscript()}\n")
-        # self.urscript = _clean_script(self.urscript())
+        self.urscript = _clean_script(self.urscript())
         self.robot.send_program(self.urscript())
         print("\nSent!")
 
@@ -126,20 +126,9 @@ class URScriptHelper():
         print("\nSent!")
 
     def info(self):
-        print(f"Host: {self.socket_host}")
-        print(f"Port: {self.socket_port}")
-        print(f"Name: {self.socket_name}")
-
-
-# robot_host = "164.54.104.148"
-# robot = Robot(robot_host)
-# time.sleep(1)
-# print("Connected!")
-#
-# pc_host = "164.54.104.7"
-# port = 31001
-# name = "ursocket0"
-# urscript = URScript()
-# sock = URScriptHelper(pc_host, port, name, robot)
+        print(f"Robot host: {self.robot.host}")
+        print(f"Socket host: {self.socket_host}")
+        print(f"Socket port: {self.socket_port}")
+        print(f"Socket name: {self.socket_name}")
 
 
