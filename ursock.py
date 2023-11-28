@@ -3,7 +3,7 @@ from urx.urscript import URScript
 from urx import Robot
 import time
 
-def clean_script(urscript: URScript) -> URScript:
+def _clean_script(urscript: URScript) -> URScript:
     '''
     Removes unneccesary global variable assignments from URScript
     when using the URScriptHelper() class below.
@@ -63,10 +63,7 @@ def clean_script(urscript: URScript) -> URScript:
             skip.append(i)
     
     # lines which are to be added to a URScript object
-    lines_new = []
-    for i in range(len(lines)):
-        if i not in skip:
-            lines_new.append(lines[i])
+    lines_new = [lines[i] for i in range(len(lines)) if i not in skip]
 
     # Create a new urscript with shadowed variable assignments removed
     urscript = URScript()
@@ -110,6 +107,7 @@ class URScriptHelper():
         self.urscript.add_line_to_program(msg)
         self.urscript._socket_send_string(f"variables : to_str('{variable}')", self.socket_name)
         print(f"Sending the following script to the robot\n{self.urscript()}\n")
+        # self.urscript = _clean_script(self.urscript())
         self.robot.send_program(self.urscript())
         print("\nSent!")
 
@@ -132,17 +130,16 @@ class URScriptHelper():
         print(f"Port: {self.socket_port}")
         print(f"Name: {self.socket_name}")
 
-# robot_host = "192.168.1.100"
-robot_host = "164.54.104.148"
-robot = Robot(robot_host)
-time.sleep(1)
-print("Connected!")
 
-# pc_host = "192.168.1.101"
-pc_host = "164.54.104.7"
-port = 31001
-name = "ursocket0"
-urscript = URScript()
-sock = URScriptHelper(pc_host, port, name, robot)
+# robot_host = "164.54.104.148"
+# robot = Robot(robot_host)
+# time.sleep(1)
+# print("Connected!")
+#
+# pc_host = "164.54.104.7"
+# port = 31001
+# name = "ursocket0"
+# urscript = URScript()
+# sock = URScriptHelper(pc_host, port, name, robot)
 
 
