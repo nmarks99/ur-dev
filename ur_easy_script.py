@@ -3,54 +3,21 @@ from urx.urscript import URScript
 from urx import Robot
 import time
 
-def _clean_script(urscript: URScript) -> URScript:
-    # Get a string of the urscript
-    script_str = urscript()
-
-    # split by newline and removing "def myProg():" and "end"
-    lines = script_str.strip().split("\n")[1:-1]
-
-    # remove spaces from indentation
-    lines = [i.strip() for i in lines]
-
-    # find the lines with global variable assignments
-    var_dict = dict() # {var : lines where it is found}
-    line_num = 0
-    for line in lines:
-        line = line.replace(" ", "")
-        if "global" in line:
-            eq_ind = line.find("=")
-            var_str = line[len("global"):eq_ind]
-            if var_str not in var_dict.keys():
-                var_dict[var_str] = [line_num]
-            else:
-                var_dict[var_str].append(line_num)
-        line_num += 1
-    
-    # get a list of the line we need to skip
-    skip = []
-    for ind_list in var_dict.values():
-        ind_list_copy = ind_list.copy()
-        ind_list_copy.pop(-1)
-        for i in ind_list_copy:
-            skip.append(i)
-    
-    # lines which are to be added to a URScript object
-    lines_new = [lines[i] for i in range(len(lines)) if i not in skip]
-    lines_new.insert(0, "TEST_START")
-    lines_new.append("TEST_END")
-
-    # Create a new urscript with shadowed variable assignments removed
-    urscript = URScript()
-    for n in lines_new:
-        urscript.add_line_to_program(n)
-
-    return urscript
-
+def pop2(arr, i1, i2):
+    i1_new = i1
+    i2_new = i2
+    if i1 > i2:
+        i1_new = i2
+        i2_new = i1
+    arr_copy = arr.copy() 
+    arr_copy.pop(i1_new)
+    arr_copy.pop(i2_new-1)
+    return arr_copy
 
 class FakeRobot():
     def __init__(self):
         print("Using fake robot")
+        self.host = "FAKEHOST"
     def close(self):
         pass
 
@@ -74,43 +41,81 @@ class URScriptHelper():
         else:
             self.robot = robot
 
-        # Open TCP socket to PC
-        # self.urscript._socket_close(self.socket_name)
-        # self.urscript._socket_open(self.socket_host, self.socket_port, self.socket_name)
-        # self.robot.send_program(self.urscript())
-        # self.urscript.reset()
 
     def __del__(self):
         self.robot.close()
 
+
     def disconnect(self):
         self.robot.close()
 
+    
+    def _clean_script(self):
+
+        script_str = self.urscript()
+        lines = script_str.strip().split("\n")[1:-1]
+        lines = [i.strip() for i in lines]
+
+        # find the lines with global variable assignments
+        var_dict = dict() # {var : lines where it is found}
+        line_num = 0
+        for line in lines:
+            line = line.replace(" ", "")
+            if "global" in line:
+                eq_ind = line.find("=")
+                var_str = line[len("global"):eq_ind]
+                if var_str not in var_dict.keys():
+                    var_dict[var_str] = [line_num]
+                else:
+                    var_dict[var_str].append(line_num)
+            line_num += 1
+        
+        # get a list of the line we need to skip
+        skip = []
+        for ind_list in var_dict.values():
+            ind_list_copy = ind_list.copy()
+            ind_list_copy.pop(-1)
+            for i in ind_list_copy:
+                for i in range(i, i+3):
+                    skip.append(i)
+        
+        # lines which are to be added to a URScript object
+        lines_new = [lines[i] for i in range(len(lines)) if i not in skip]
+
+        # open the socket at the start and close it at the end
+        topop = []
+        for i,v in enumerate(lines_new):
+            if "socket_open" in v:
+                topop.append(i)
+            elif "socket_close" in v:
+                topop.append(i)
+        if len(topop) == 2:
+            lines_new = pop2(lines_new, topop[0], topop[1])
+        lines_new.insert(0, f'socket_open("{self.socket_host}", {self.socket_port}, "{self.socket_name}")')
+        lines_new.append(f'socket_close("{self.socket_name}")')
+
+        # Create a new urscript with shadowed variable assignments removed
+        urscript = URScript()
+        for n in lines_new:
+            urscript.add_line_to_program(n)
+
+        self.urscript = urscript
+
+
     def send(self):
+        self._clean_script()
         if isinstance(self.robot, FakeRobot):
-            self.urscript = _clean_script(self.urscript)
-            print("Sending:")
+            print("Sending...")
             print(self.urscript())
         else:
             self.robot.send_program(self.urscript())
 
-    def set_variable(self, variable, value):
 
+    def set_variable(self, variable, value):
         msg = f"global {variable}={value}" 
         self.urscript.add_line_to_program(msg)
+        self.urscript._socket_send_string(f'{variable}={value}', self.socket_name)
 
-        # self.urscript._socket_send_string(f"variables : to_str('{variable}')", self.socket_name)
-        # print(f"Sending the following script to the robot\n{self.urscript()}\n")
-        # self.urscript = _clean_script(self.urscript())
-        # self.robot.send_program(self.urscript())
-        # print("\nSent!")
-
-    def socket_send_string(self, msg):
-        self.urscript._socket_open(self.socket_host, self.socket_port, self.socket_name)
-        self.urscript.add_line_to_program(f'socket_send_string("{msg}","{self.socket_name}")')
-        self.urscript._socket_close(self.socket_name)
-        self.robot.send_program(self.urscript())
-        self.urscript.reset()
 
     def send_script_from_file(self, script_path):
         with open(script_path, "r") as f:
@@ -119,10 +124,13 @@ class URScriptHelper():
         self.robot.send_program(file_string)
         print("\nSent!")
 
+
     def info(self):
+        print("\n------------INFO---------------")
         print(f"Robot host: {self.robot.host}")
         print(f"Socket host: {self.socket_host}")
         print(f"Socket port: {self.socket_port}")
-        print(f"Socket name: {self.socket_name}")
+        print(f"Socket name: {self.socket_name}\n")
+        print(f"URScript:\n{self.urscript()}")
 
 
