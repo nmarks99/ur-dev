@@ -1,8 +1,15 @@
 def myProg():
-    global a=1
-    global a=2
-    global b=3
-    global b=4
-    global c=5
-    global c=6
+
+    global BlockID=42
+    socket_open("164.54.104.7",31001,"ursocket0")
+    socket_send_string("BlockID=42","ursocket0")
+    sync()
+    socket_close("ursocket0")
+
+    global BlockID=1919
+    socket_open("164.54.104.7",31001,"ursocket0")
+    socket_send_string("BlockID=1919","ursocket0")
+    sync()
+    socket_close("ursocket0")
+
 end

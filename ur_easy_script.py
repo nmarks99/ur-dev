@@ -4,33 +4,6 @@ from urx import Robot
 import time
 
 def _clean_script(urscript: URScript) -> URScript:
-    '''
-    Removes unneccesary global variable assignments from URScript
-    when using the URScriptHelper() class below.
-    For example, if you do the following:
-    
-    script = URScriptHelper()
-    script.set_variable("var1", 1)
-    script.set_variable("var1", 2)
-    script.set_variable("var1", 3)
-
-    The resulting script will look something like:
-    def myProg():
-        global var1=1
-        global var1=2
-        global var1=3
-    end
-
-    the clean_script function will return a new URScript which
-    removes the unneccesary assignments which are shadowed by
-    later assignments. The output of clean_script() here would be:
-
-    def myProg():
-        global var1=3
-    end
-
-    '''
-    
     # Get a string of the urscript
     script_str = urscript()
 
@@ -64,6 +37,8 @@ def _clean_script(urscript: URScript) -> URScript:
     
     # lines which are to be added to a URScript object
     lines_new = [lines[i] for i in range(len(lines)) if i not in skip]
+    lines_new.insert(0, "TEST_START")
+    lines_new.append("TEST_END")
 
     # Create a new urscript with shadowed variable assignments removed
     urscript = URScript()
@@ -73,6 +48,12 @@ def _clean_script(urscript: URScript) -> URScript:
     return urscript
 
 
+class FakeRobot():
+    def __init__(self):
+        print("Using fake robot")
+    def close(self):
+        pass
+
 class URScriptHelper():
     '''
     Provides and easy to use interface for sending URscript commands to
@@ -80,7 +61,7 @@ class URScriptHelper():
     '''
 
     def __init__(self, socket_host, socket_port, socket_name, robot):
-        assert isinstance(robot, Robot)
+        assert isinstance(robot, Robot) or robot is None
         assert isinstance(socket_host, str)
         assert isinstance(socket_port, str) or isinstance(socket_port, int)
         assert isinstance(socket_name, str)
@@ -88,7 +69,10 @@ class URScriptHelper():
         self.socket_port = socket_port
         self.socket_name = socket_name
         self.urscript = URScript()
-        self.robot = robot
+        if robot is None:
+            self.robot = FakeRobot()
+        else:
+            self.robot = robot
 
         # Open TCP socket to PC
         # self.urscript._socket_close(self.socket_name)
@@ -102,14 +86,24 @@ class URScriptHelper():
     def disconnect(self):
         self.robot.close()
 
+    def send(self):
+        if isinstance(self.robot, FakeRobot):
+            self.urscript = _clean_script(self.urscript)
+            print("Sending:")
+            print(self.urscript())
+        else:
+            self.robot.send_program(self.urscript())
+
     def set_variable(self, variable, value):
+
         msg = f"global {variable}={value}" 
         self.urscript.add_line_to_program(msg)
-        self.urscript._socket_send_string(f"variables : to_str('{variable}')", self.socket_name)
-        print(f"Sending the following script to the robot\n{self.urscript()}\n")
-        self.urscript = _clean_script(self.urscript())
-        self.robot.send_program(self.urscript())
-        print("\nSent!")
+
+        # self.urscript._socket_send_string(f"variables : to_str('{variable}')", self.socket_name)
+        # print(f"Sending the following script to the robot\n{self.urscript()}\n")
+        # self.urscript = _clean_script(self.urscript())
+        # self.robot.send_program(self.urscript())
+        # print("\nSent!")
 
     def socket_send_string(self, msg):
         self.urscript._socket_open(self.socket_host, self.socket_port, self.socket_name)
