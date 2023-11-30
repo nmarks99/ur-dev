@@ -8,7 +8,7 @@ robot = None
 
 s = URScriptHelper(socket_host, socket_port, socket_name, robot)
 
-TEST = 2
+TEST = 3
 
 if TEST == 1:
     s.set_variable("one", 0)
@@ -26,6 +26,10 @@ elif TEST == 2:
 
     s.set_variable("two", 222)
     s.send()
+
+elif TEST == 3:
+    s.enable_interpreter_mode()
+    s.send(socket=False)
 
 else:
     print(f"No test {TEST}")

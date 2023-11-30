@@ -50,7 +50,7 @@ class URScriptHelper():
         self.robot.close()
 
     
-    def _clean_script(self):
+    def _clean_script(self, socket=True):
 
         script_str = self.urscript()
         lines = script_str.strip().split("\n")[1:-1]
@@ -91,8 +91,9 @@ class URScriptHelper():
                 topop.append(i)
         if len(topop) == 2:
             lines_new = pop2(lines_new, topop[0], topop[1])
-        lines_new.insert(0, f'socket_open("{self.socket_host}", {self.socket_port}, "{self.socket_name}")')
-        lines_new.append(f'socket_close("{self.socket_name}")')
+        if socket:
+            lines_new.insert(0, f'socket_open("{self.socket_host}", {self.socket_port}, "{self.socket_name}")')
+            lines_new.append(f'socket_close("{self.socket_name}")')
 
         # Create a new urscript with shadowed variable assignments removed
         urscript = URScript()
@@ -102,8 +103,8 @@ class URScriptHelper():
         self.urscript = urscript
 
 
-    def send(self):
-        self._clean_script()
+    def send(self, socket=True):
+        self._clean_script(socket)
         if isinstance(self.robot, FakeRobot):
             print("Sending...")
             print(self.urscript())
@@ -114,7 +115,12 @@ class URScriptHelper():
     def set_variable(self, variable, value):
         msg = f"global {variable}={value}" 
         self.urscript.add_line_to_program(msg)
-        self.urscript._socket_send_string(f'{variable}={value}', self.socket_name)
+        self.urscript.add_line_to_program(f'socket_send_string(to_str(BlockID),"{self.socket_name}")')
+        # self.urscript._socket_send_string(f'to_str({variable})', self.socket_name)
+
+
+    def enable_interpreter_mode(self):
+        self.urscript.add_line_to_program("interpreter_mode()")
 
 
     def send_script_from_file(self, script_path):

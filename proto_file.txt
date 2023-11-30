@@ -1,0 +1,206 @@
+
+# ur3StrProto.proto
+# Stream protocol
+#
+# Stream Protocol File for communicating with UR3 Controller
+
+# ~~~~~ available dashboard commands ~~~~~
+
+# load <string>	| quit				 | get loaded program
+# play			| shutdown			 | popup <string>
+# stop			| running 	    	 | close popup
+# pause			| robotmode			 | addToLog <string>
+#									 | isProgramSaved
+
+# programState					| clear operational mode
+# PolyscopeVersion				| power on
+# set operational mode <string> | power off
+# get operational mode 			| brake release
+
+# safetystatus			 | restart safety		
+# unlock protective stop | is in remote control
+# close safety popup	 | get serial number	| get robot model				
+# load installation <string> 
+# generate flight report <string>
+# generate support file <string>
+
+# each command terminated by newline character
+InTerminator = 0x0A;
+OutTerminator = 0x0A;
+ExtraInput = Ignore;
+ReplyTimeout = 2000;
+ 
+# add @mismatch lines for error responses
+
+load_prog {
+  out "load %(\$1.AA)s%(\$1.BB)s";
+  in "Loading program: %s";
+  #in "File not found: %s";
+  #in "Error while loading program: %s";
+}
+
+play_prog {
+  out "play";
+  in "Starting program";
+  #in "Failed to execute: play";
+}
+
+stop_prog {
+  out "stop";
+  in "Stopped";
+  #in "Failed to execute: stop";
+}
+
+pause_prog {
+  out "pause";
+  in "Pausing program";
+  #in "Failed to execute: pause";
+}
+
+get_mode { # status of robot arm, several statuses
+  out "robotmode";
+  in "Robotmode: %s";
+}
+
+get_prog {
+  out "get loaded program";
+  in "Loaded program: %s";
+  #in "No program loaded";
+}
+
+prog_state {
+  out "programState";
+  in "%s";
+}
+
+is_running {
+  out "running";
+  in "Program running: %s";
+}
+
+get_op_mode { # manual automatic or none
+  out "get operational mode";
+  in "%s";
+}
+
+safety_stat {
+  out "safetystatus";
+  in "Safetystatus: %s";
+}
+
+get_rc_status {
+  out "is in remote control";
+  in "%s";
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+close_conn {
+  out "quit";
+  in "%s";
+}
+
+shutdown {
+  out "shutdown";
+  in "%s";
+}
+
+send_popup {
+  out "popup %(\$1.BB)s";
+  in "%s";
+}
+
+close_popup {
+  out "close popup";
+  in "%s";
+}
+
+add_log {
+  out "addToLog %(\$1.CC)s";
+  in "%s";
+}
+
+is_saved {
+  out "isProgramSaved";
+  in "%s";
+ }
+ 
+
+pendant_ver {
+  out "PolyscopeVersion";
+  in "%s";
+}
+
+set_op_mode {
+  out "set operational mode %(\$1.DD)s";
+  in "%s";
+}
+ 
+clear_op_mode {
+  out "clear operational mode";
+  in "%s";
+}
+
+power_on {
+  out "power on";
+  in "%s";
+}
+
+power_off {
+  out "power off";
+  in "%s";
+}
+
+brake_release {
+  out "break release";
+  in "%s";
+}
+
+
+unlock_protective_stop {
+  out "unlock protective stop";
+  in "%s";
+}
+
+close_safety_popup {
+  out "close safety popup";
+  in "%s";
+}
+
+restart_safety {
+  out "restart safety";
+  in "%s";
+}
+
+
+get_serial_num {
+  out "get serial number";
+  in "%s";
+}
+
+get_model {
+  out "get robot model";
+  in "%s";
+}
+
+load_installation {
+  out "load installation %(\$1.EE)s";
+  in "%s";
+}
+
+gen_report {
+  out "generate flight report %(\$1.FF)s";
+  in "%s";
+}
+
+gen_support {
+  out "generate support file %(\$1.GG)s";
+  in "%s";
+}
+
+# debug protocol
+debug {
+  out "%s";
+  in "%39c";
+  #in "%39c";
+}
