@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import socket
-from epics import caget
+from epics import caget, caput
 
 HOST = "164.54.116.80" # pepper IP address
 PORT = 31111
