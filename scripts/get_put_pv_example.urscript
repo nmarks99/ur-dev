@@ -1,0 +1,12 @@
+# Note: ur_server.py must be running on host computer
+# for the below to work
+
+# Get the value of a PV from URScript on the robot
+socket_open("164.54.116.80", 31111)
+BlockID = socket_get_var("BlockID")
+socket_close()
+
+# Sets the value of a PV from URScript on the robot
+socket_open("164.54.116.80", 31111)
+socket_set_var("BlockID", 42)
+socket_close()
