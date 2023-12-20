@@ -1,5 +1,6 @@
 #!./.venv/bin/python3
 import socket
+import argparse
 from epics import caget, caput
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -9,10 +10,18 @@ PORT = 31111
 BUFFER_SIZE = 1024
 PREFIX = "8idgur3e"
 
+parser = argparse.ArgumentParser(description='TCP server to connect EPICS to UR robot scripts')
+parser.add_argument('--port', default=PORT, help='TCP port number')
+parser.add_argument('--host', default=HOST, help='IP address')
+parser.add_argument('--prefix', default=PREFIX, help='EPICS IOC prefix')
+args = parser.parse_args()
+HOST = args.host
+PORT = args.port
+PREFIX = args.prefix
+
+
 def epics_handler(connection, data):
     data_recv = data.decode("ascii").strip().split(" ")
-    print(data_recv)
-    print(f"length = {len(data_recv)}")
     cmd = data_recv[0]
 
     ok = True
