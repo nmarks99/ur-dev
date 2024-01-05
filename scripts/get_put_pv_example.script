@@ -1,0 +1,24 @@
+# Note: ur_server.py must be running on host computer
+
+popup("Begin program!", blocking=True)
+
+i = 1
+while i < 30:
+
+    # get the PV from the server and display as a popup
+    socket_open("164.54.104.7", 31111)
+    BlockID = socket_get_var("BlockID")
+    socket_close()
+
+    popup(BlockID, title="BlockID popup", blocking=True)
+    
+    # set the PV and increment the values
+    socket_open("164.54.104.7", 31111)
+    socket_set_var("BlockID", i)
+    socket_close()
+    i = i + 1
+end
+
+# close the socket
+socket_close()
+sync()

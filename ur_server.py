@@ -1,4 +1,22 @@
 #!./.venv/bin/python3
+'''
+A TCP server designed to connect EPICS PVs to a URScript running on the UR controller.
+
+Run this program on the IOC's host machine and it listens for messages
+of the form "GET pv" and "SET pv value". If a "GET" message is received,
+the value of the corresponding PV in the given IOC is sent back on server.
+If a "SET" message is received, the given value of the PV is set.
+
+From the URScript program on the UR controller, first open the socket:
+socket_open("HOST_IP", PORT)
+
+To get the value of a PV:
+my_pv = socket_get_var("my_pv")
+
+To set the value of a PV:
+socket_set_var("my_pv", 42)
+'''
+
 import socket
 import argparse
 from epics import caget, caput

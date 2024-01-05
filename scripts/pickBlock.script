@@ -1,0 +1,342 @@
+# created 7/16/2023
+# Aum Suthar, Seasonal Intern 2023
+# aumksuthar@gmail.com
+def pickBlock(BlockID):
+  # Global parameters:
+  global speed_ms    = 0.250
+  global speed_rads  = 0.750
+  global accel_mss   = 1.200
+  global accel_radss = 1.200
+  global blend_radius_m = 0.000
+  gripper_closed_norm = [100, 100, 100, 100]
+gripper_open_norm = [0, 0, 0, 0]
+gripper_closed_mm = [0, 0, 0, 0]
+gripper_open_mm = [50, 50, 50, 50]
+
+def rq_current_pos_mm(gripper_socket=1):
+  pos_gripper = rq_current_pos(gripper_socket)
+  pos_mm = gripper_to_mm(pos_gripper, gripper_socket)
+  return round_value_2_dec(pos_mm)
+end
+
+def rq_move_mm(pos_mm, gripper_socket=1):
+  pos_gripper = mm_to_gripper(pos_mm, gripper_socket)
+  rq_move(pos_gripper, gripper_socket)
+end
+
+def rq_move_and_wait_mm(pos_mm, gripper_socket=1):
+  pos_gripper = mm_to_gripper(pos_mm, gripper_socket)
+  rq_move_and_wait(pos_gripper, gripper_socket)
+end
+
+def get_closed_norm(gripper_socket):
+  return gripper_closed_norm[gripper_socket - 1]
+end
+
+def get_open_norm(gripper_socket):
+  return gripper_open_norm[gripper_socket - 1]
+end
+
+def get_closed_mm(gripper_socket):
+  return gripper_closed_mm[gripper_socket - 1]
+end
+
+def get_open_mm(gripper_socket):
+  return gripper_open_mm[gripper_socket - 1]
+end
+
+def set_closed_norm(closed_norm, gripper_socket):
+  gripper_closed_norm[gripper_socket - 1] = closed_norm
+end
+
+def set_open_norm(open_norm, gripper_socket):
+  gripper_open_norm[gripper_socket - 1] = open_norm
+end
+
+def set_closed_mm(closed_mm, gripper_socket):
+  gripper_closed_mm[gripper_socket - 1] = closed_mm
+end
+
+def set_open_mm(open_mm, gripper_socket):
+  gripper_open_mm[gripper_socket - 1] = open_mm
+end
+
+def gripper_to_mm(value_gripper, gripper_socket):
+  closed_norm = get_closed_norm(gripper_socket)
+  open_norm = get_open_norm(gripper_socket)
+  closed_mm = get_closed_mm(gripper_socket)
+  open_mm = get_open_mm(gripper_socket)
+
+  value_norm = (value_gripper / 255) * 100
+
+  slope = (closed_mm - open_mm) / (closed_norm - open_norm)
+  value_mm = slope * (value_norm - closed_norm) + closed_mm
+
+  if (value_mm > open_mm):
+      value_mm_limited = open_mm
+  elif (value_mm < closed_mm):
+      value_mm_limited = closed_mm
+  else:
+      value_mm_limited = value_mm
+  end
+
+  return value_mm_limited
+end
+
+def mm_to_gripper(value_mm, gripper_socket):
+  # tell gripper to go to a position (I think?). 0mm is fully closed, 50mm is fully open
+  closed_norm = get_closed_norm(gripper_socket)
+  open_norm = get_open_norm(gripper_socket)
+  closed_mm = get_closed_mm(gripper_socket)
+  open_mm = get_open_mm(gripper_socket)
+
+  slope = (closed_norm - open_norm) / (closed_mm - open_mm)
+  value_norm = (value_mm - closed_mm) * slope + closed_norm
+
+  value_gripper = value_norm * 255 / 100
+
+  if (value_gripper > 255):
+      value_gripper_limited = 255
+  elif (value_gripper < 0):
+      value_gripper_limited = 0
+  else:
+      value_gripper_limited = round_value(value_gripper)
+  end
+
+  return value_gripper_limited
+end
+
+def round_value(value):
+  value_mod = value % 1
+
+  if(value_mod < 0.5):
+      return floor(value)
+  else:
+      return ceil(value)
+  end
+end
+
+def round_value_2_dec(value):
+  value_x_100 = value * 100
+  value_x_100_rounded = round_value(value_x_100)
+  return value_x_100_rounded / 100
+end
+
+def clear_socket_buffer(gripper_socket="1", read_timeout = 0.1):
+  rq_comm_clear_socket_buffer_enabled[rq_socket_to_index(gripper_socket)] = True
+end
+
+def rq_gripper_id_to_ascii(gripper_id):
+  if(gripper_id == "1"):
+      return 57
+  elif(gripper_id == "2"):
+      return 50
+  elif(gripper_id == "3"):
+      return 51
+  elif(gripper_id == "4"):
+      return 52
+  end
+end
+
+def scale(value, rawRange, scaledRange):
+  def computeSlope(inputRange, outputRange):
+      outputRangeDelta = outputRange[1] - outputRange[0]
+      inputRangeDelta = inputRange[1] - inputRange[0]
+
+      if (inputRangeDelta == 0):
+          return 0
+      else:
+          return outputRangeDelta / inputRangeDelta
+      end
+  end
+
+  def computeIntercept(slope, inputRange, outputRange):
+      return outputRange[0] - (slope * inputRange[0])
+  end
+
+  def clipScaledValue(outputScaledValue, outputRange):
+      if (outputRange[0] < outputRange[1]):
+          return clipWhenLowerLimitIsLessThanHigher(outputScaledValue, outputRange)
+      else:
+          return clipWhenLowerLimitIsGreaterThanHigherLimit(outputScaledValue, outputRange)
+      end
+  end
+
+  def clipWhenLowerLimitIsGreaterThanHigherLimit(outputScaledValue, outputRange):
+      if (outputScaledValue < outputRange[1]):
+          return outputRange[1]
+      elif (outputScaledValue > outputRange[0]):
+          return outputRange[0]
+      else:
+          return outputScaledValue
+      end
+  end
+
+  def clipWhenLowerLimitIsLessThanHigher(outputScaledValue, outputRange):
+      if (outputScaledValue < outputRange[0]):
+          return outputRange[0]
+      elif (outputScaledValue > outputRange[1]):
+          return outputRange[1]
+      else:
+          return outputScaledValue
+      end
+  end
+
+  slope = computeSlope(rawRange, scaledRange)
+  intercept = computeIntercept(slope, rawRange, scaledRange)
+  scaledValue = slope * value + intercept
+  return clipScaledValue(scaledValue, scaledRange)
+end
+
+def limit(value, range):
+  return scale(value, range, range)
+end
+
+# Subprogram CloseGripper
+def CloseGripper():
+if not(gripper_connected[0]):
+    popup("Gripper 1 must be connected to run this program.","No connection",False,True,True)
+end
+if not(rq_is_gripper_activated("1")):
+    popup("Gripper 1 is not activated. Go to Installation tab > Gripper to activate it and run the program again.","Not activated",False,True,True)
+end
+rq_set_pos_spd_for(255,100,255,"1")
+# rq_set_pos_spd_for(pos, speed, force, gripper_socket="1")
+rq_wait_pos_spe_for_request(255,100,255,"1")
+rq_go_to("1")
+rq_wait("1")
+#current_gripper_position = rq_current_pos()
+end
+ 
+# Subprogram OpenGripper
+def OpenGripper():
+if not(gripper_connected[0]):
+    popup("Gripper 1 must be connected to run this program.","No connection",False,True,True)
+end
+if not(rq_is_gripper_activated("1")):
+    popup("Gripper 1 is not activated. Go to Installation tab > Gripper to activate it and run the program again.","Not activated",False,True,True)
+end
+rq_set_pos_spd_for(0,100,255,"1")
+# rq_set_pos_spd_for(pos, speed, force, gripper_socket="1")
+rq_wait_pos_spe_for_request(0,100,255,"1")
+rq_go_to("1")
+rq_wait("1")
+#current_gripper_position = rq_current_pos()
+end
+
+# Subprogram OpenGripperToMM
+def OpenGripperToMM(pos_mm):
+	rq_move_mm(pos_mm,gripper_socket=1)
+end
+  
+  #--------------------------
+  # Add any default subprograms here
+  # For example, to drive a gripper as a program call:
+  # def Gripper_Open():
+  #   ...
+  # end
+  #
+  # Example to drive a spray gun:
+  def SprayOn(value):
+    # use the value as an output:
+    DO_SPRAY = 5
+    if value == 0:
+      set_standard_digital_out(DO_SPRAY, False)
+    else:
+      set_standard_digital_out(DO_SPRAY, True)
+    end
+  end
+
+  # Example to synchronize 2
+  def Synchronize():
+    # Use the following digital output to signal the state of the robot:
+    DO_SYNC = 1
+    
+    # Use the following digital input to get the state of another robot:
+    DI_SYNC = 1
+    
+    if (get_standard_digital_out(DO_SYNC) == get_standard_digital_in(DI_SYNC)):
+      set_standard_digital_out(DO_SYNC, not (get_standard_digital_out(DI_SYNC)))
+      sleep(0.1)
+      thread Thread_wait_1():
+        while (True):
+          sleep(0.01)
+        end
+      end
+      if (get_standard_digital_out(DO_SYNC) != get_standard_digital_in(DI_SYNC)):
+        global thread_handler_1=run Thread_wait_1()
+        while (get_standard_digital_out(DO_SYNC) != get_standard_digital_in(DI_SYNC)):
+          sync()
+        end
+        kill thread_handler_1
+      end
+    else:
+      if (get_standard_digital_out(DO_SYNC) != get_standard_digital_in(DI_SYNC)):
+        set_standard_digital_out(DO_SYNC, not (get_standard_digital_out(DO_SYNC)))
+      end
+    end
+  end
+
+  #
+  # Example to move an external axis
+  def MoveAxis(value):
+    # use the value as an output:
+    DO_AXIS_1 = 1
+    DI_AXIS_1 = 1
+    if value <= 0:
+      set_standard_digital_out(DO_AXIS_1, False)
+      
+      # Wait for digital input to change state
+      #while (get_standard_digital_in(DI_AXIS_1) != False):
+      #  sync()
+      #end
+    else:
+      set_standard_digital_out(DO_AXIS_1, True)
+      
+      # Wait for digital input to change state
+      #while (get_standard_digital_in(DI_AXIS_1) != True):
+      #  sync()
+      #end
+    end
+  end
+  #--------------------------
+    grip_opening = 36
+    res_grid_z_approach = 0.08
+    res_grid_z_approach_too = 0.05
+    res_grid_z_grip = 0.034
+    row = floor((BlockID-1)/8)
+    col = (BlockID-1) % 8
+    og_block_x = -0.136309 #x-coordinate of the first block in the sample reservoir
+    og_block_y = 0.481974  #y-coordinate of the first block in the sample reservoir
+    horizontalOffset = 0.0089 #added distance between pallets horizontally
+    verticalOffset = 0.0427 #distance between centers of blocks vertically
+    horizontalSpacing = 0.035 # horizontal spacing between blocks
+    verticalSpacing = 0.030 # vertical spacing between blocks
+    if row>=2:
+        x = og_block_x + (horizontalOffset * floor(row/2)) + (row*horizontalSpacing)
+    else:
+        x = og_block_x + (row * horizontalSpacing)
+    end
+    if col>=4:
+        y = og_block_y - (verticalOffset) - ((col)*verticalSpacing)
+    else:
+        y = og_block_y - (col*verticalSpacing)
+    end
+    #Uncomment the following to double check coordinate caclulation
+    #popup(x, title="Popup #1",blocking=False)
+    #popup(y, title="Popup #2",blocking=False)
+    #______________________________________________________________
+    set_tcp(p[0.000000, 0.000000, 0.203000, 0.000000, 0, 0.000000])
+    movel([3.698929, -2.128988, 1.370673, -0.812480, -1.570796, -3.141593],1.20000,0.75000,0,0.000)  #waypoint 1
+    movel([4.341210, -1.427582, 1.601437, -1.744652, -1.570796, -3.141593],accel_mss,speed_ms,0,0.000) #move above blocks
+    CloseGripper()
+    OpenGripperToMM(grip_opening)
+    movel(p[x, y, res_grid_z_approach, 0.000000, 3.141593, 0.000000],accel_mss,speed_ms,0,0.000) #birds eye of the block
+    movel(p[x, y, res_grid_z_approach_too, 0.000000, 3.141593, 0.000000],accel_mss,speed_ms,0,0.000) #homing on the block
+    speed_ms  = 0.0100
+    movel(p[x, y, res_grid_z_grip, 0.000000, 3.141593, 0.000000],accel_mss,speed_ms,0,0.000) #gripping the block
+    OpenGripperToMM(5)
+    movel(p[x, y, res_grid_z_approach, 0.000000, 3.141593, 0.000000],accel_mss,speed_ms,0,0.000) #moving back above the chosen block
+    movel([3.698929, -2.128988, 1.370673, -0.812480, -1.570796, -3.141593],1.20000,0.75000,0,0.000)  #waypoint 1
+end
+pickBlock(BlockID)
